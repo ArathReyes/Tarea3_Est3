@@ -1,5 +1,5 @@
 ---
-title: "Tarea3_ts"
+title: "Tarea 3. Modelación ARIMA"
 author: "Aguilar García, Karen Shamed
          Cruz Estrada, Valeria Lucero
          Reyes López Arath Alejandro"
