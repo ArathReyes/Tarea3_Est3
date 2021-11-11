@@ -24,7 +24,7 @@ library(tsdl)
 ts_12 <- tsdl[[12]]
 attributes(ts_12)
 ```
-## **Inciso 1:**
+#### 1. *Análisis descriptivo*: Grafique los datos, describa lo que observe (varianza constante o no constante, descomposicíon clásica, tendencia, ciclos estacionales, periodicidad de los ciclos).
 Veamos cuáles y cómo son los datos presentados:
 ```{r}
 print(ts_12)
@@ -162,7 +162,10 @@ pacf(data)
 ```
 
 
-## **Inciso 2**
+#### 2. *Missing data*: Suponga que las observaciones de 1971 Qtr1, 1973 Qtr2 y 1973 Qtr3, son datos faltantes NA, es decir, sustituya estas observaciones por NA. 
+
+#### Use al menos dos métodos de imputacion de la paquetería imputeTS. ¿Cuál método es adecuado para estos datos? (Note que el valor imputado debe aproximarse al valor omitido).
+
 Veamos que los datos a eliminar son los siguientes:
 ```{r}
 datos_eliminados <- c(ts_12[29], ts_12[38], ts_12[39])
@@ -205,7 +208,11 @@ print(paste0("Error Cuadrático Medio de Estimación por Kalman: ", MSE2))
 
 Con lo anterior confirmamos que el método de Kalman fue mejor para estimar nuestros datos eliminados.
 
-## Inciso 3:
+#### 3. *Ajuste*: Con los datos observados completos, ajuste un modelo ARIMA o SARIMA adecuado.
+
+#### Obtenga correlogramas, revise si los parámetros son significativos, compruebe los supuestos (que los residuales sean ruido blanco con distribuci ́on normal).
+
+#### Obtenga dos o más posibles modelos, realice análisis de residuales y calcule medidas de bondad de ajuste. Haga la comparación para decidir cúalmodelo sería el más adecuado.
 Primero observemos el ACF y PACF para notar cuantos parámetros significantes tenemos:
 ```{r}
 tsdisplay(data)
@@ -492,6 +499,42 @@ Podemos ver que el *modelo 3* pasa todos los supuestos, sin embargo tiene los pe
 
 Ahora, comparando el *modelo 1* y el *modelo 4*, podemos ver que el primero tiene mejores valores para *AIC*, *ME*, *MAE* y *RMSE* que el cuarto modelo. Por lo tanto nos quedamos con el **modelo 1**.
 
+#### 4. *Forecasting*: Con el modelo estimado, pronostique $n_{new} = 8$ (2 años) valores futuros (obtenga intervalos de predicción).
 
+Ya que hemos determinado que (1,2,1)(0,1,1)[4] se ajusta adecuadamente, seguiramos trabajando con éste
+
+
+```{r}
+
+
+fit1 <- arima(data2, order=c(1,2,1), seasonal=list(order=c(0,1,1), period=4))
+#hacemos 2 diferenciaciones manualmente para obtener estacionaridad
+
+fit1
+```
+
+
+Ahora hacemos las predicciones para los siguientes 2 años:
+
+
+```{r}
+
+### Predict
+
+pred <- predict(fit1, n.ahead=8)$pred
+pred
+pred= pred^2
+pred1 <- predict(fit1, n.ahead = 24)
+tl <- pred1$pred - 1.96 * pred1$se
+tu <- pred1$pred + 1.96 * pred1$se
+tl <- (tl)^2
+tu <- (tu)^2
+
+plot(forecast(ts_12, 4))
+ts.plot(ts_12_2, xlim= c(1964, 1979), ylim=c(9,50), main= "predicción")
+points(pred, type="l", col= 3)
+points(tl, type= "l", col= "red")
+points(tu, type= "l", col= "red")
+```
 
 
