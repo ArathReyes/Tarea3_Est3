@@ -1,6 +1,6 @@
 ---
-title: "Tarea3_ts"
-author: "Arath Reyes"
+title: "Tarea 3. Modelación ARIMA"
+author: "Aguilar García Karen Shamed, Cruz Estrada Valeria Lucero, Reyes López Arath Alejandro"
 date: "7/11/2021"
 output: html_document
 ---
@@ -17,7 +17,6 @@ library(ggplot2)
 library(lmtest)
 ```
 
-# **Tarea 3:** Modelación ARIMA 
 
 ```{r}
 library(tsdl)
@@ -92,22 +91,10 @@ pacf(ts_12)
 
 Visualmente, parece claro que los ciclos estacionales sean de 2 periodos o, equivalentemente, de 6 meses o, 4 periodos o 12 meses. Aún más, viendo el PACF observamos para el 2no punto este se muestra altamente correlacionado, así como el 4to. A pesar de esta evidencia consideremos lo siguiente:
 
-
 ```{r}
-p = periodogram(ts_12, main = "Periodograma", col = 4)
-# Ordenamos de mayor a menor las estimaciones del periodograma
-spec = sort(p$spec, decreasing = TRUE)
-spec = spec[1:5]
-i = match(spec, p$spec) # Buscamos sus índices en el periodograma
-d = p$freq
-d = d[i]
-cbind(spec, d, i)
-d = 1/d
-d = floor(d)
-d = sort(d)
-d #Posibles periodos
+plot(cycle(ts_12))
 ```
-Dado lo anterior, podemos afirmar que **nuestra serie tiene un ciclo de 2 periodos o de 6 meses.**
+De esta manera, es evidente que tenemos **ciclos estacionales de cada 12 meses o cada 4 registros.**
 
 
 Al observar el ACF nos podemos percatar que existen correlaciones anteriores, de esta manera, es tentador afirmar que nuestra serie **NO es estacionaria**, de nuevo, esta interpretación del ACF debe ser corroborada de forma estadística.
@@ -220,12 +207,14 @@ tsdisplay(data)
 Observamos algo raro en el ACF pues todas las observaciones se salen de nuestras bandas de confianza, esto debido a que tenemos un proceso estacionario con ciclos estacionales. Además, podemos observar que siguen cierto comportamiento, por lo que propondremos los siguientes modelos:
 
 ```{r}
+ts_12 <- tsdl[[12]]
+
 #Modelo 1
-#SARIMA(1,0,1)(0,1,1)[4]
-fit1_data <- arima(data, c(1, 0, 1), seasonal = list(order = c(0, 1, 1), period = 4))
+#SARIMA(1,2,1)(0,1,1)[4]
+fit1_data <- arima(sqrt(ts_12), c(1, 2, 1), seasonal = list(order = c(0, 1, 1), period = 4)) # El que propuse
 #Modelos 2
 #SARIMA(0,0,1)(1,1,1)[4] 
-fit2_data <- arima(data, c(0, 0, 1), seasonal = list(order = c(1, 1, 1), period = 4))
+fit2_data <- arima(data, c(0, 0, 1), seasonal = list(order = c(1, 1, 1), period = 4)) #antes era modelo 1
 #Modelo 3
 #SARIMA(0,0,1)(0,1,0)[4] 
 fit3_data <- arima(data, c(0, 0, 1), seasonal = list(order = c(0, 1, 0), period = 4))
@@ -233,8 +222,10 @@ fit3_data <- arima(data, c(0, 0, 1), seasonal = list(order = c(0, 1, 0), period 
 #SARIMA(1,0,1)(1,1,1)[4]
 fit5_data  <- arima(data, c(1, 0, 1), seasonal = list(order = c(1, 1, 1), period = 4))
 ```
+Es imperativo mencionar que el modelo 1, aquel que está dado por la serie original con raíz cuadrada, es tal que $d=2$ pues como observamos anteriormente el diferenciar dos veces nos proporciona una serie estacionaria, mientras que los demás modelos contienen a los datos diferenciados manualmente, esto lo hacemos así, pues si el modelo 1 resulta ser el mejor, nos facilitará regresar la transformación.
 
-Ahora usemos la función *auto.arima()* para proponer un cuarto moedelo:
+
+Ahora usemos la función *auto.arima()* para proponer un cuarto modelo:
 
 ```{r}
 fit4_data <- auto.arima(data)
@@ -273,7 +264,7 @@ abline(h=-3*(var(fit5_data$residuals)), col="red", lwd=2)
 Podemos notar que tenemos una gran cantidad de datos discrepantes, por lo que no podemos garantizar que algun modelo es mejor que otro. Entonces hagamos una comparación de criterios de bondad de ajuste, es decir veamos el AIC, BIC, ME, MAE, RMSE y  el número de parámetros:
 
 ```{r}
-comparar_1=cbind("SARIMA(1,0,1)(0,1,1)[4]",fit1_data$aic,BIC(fit1_data), mean(fit1_data$residuals), mean(abs(fit1_data$residuals)), sqrt(mean((fit1_data$residuals)^2)), 4)
+comparar_1=cbind("SARIMA(1,2,1)(0,1,1)[4]",fit1_data$aic,BIC(fit1_data), mean(fit1_data$residuals), mean(abs(fit1_data$residuals)), sqrt(mean((fit1_data$residuals)^2)), 4)
 
 comparar_2=cbind("SARIMA(0,0,1)(1,1,1)[4]",fit2_data$aic,BIC(fit2_data), mean(fit2_data$residuals), mean(abs(fit2_data$residuals)), sqrt(mean((fit2_data$residuals)^2)), 4)
 
@@ -292,7 +283,7 @@ rownames(resultados)=c("", "", "", "", "")
 
 (resultados)
 ```
-Considerando el AIC, notemos que el *modelo 1* se ajusta mejor y tomando en cuenta el BIC tenemos que el *modelo 4* se ajusta mejor. Pero considerando los errores tenemos que el *modelo 1* se ajusta mejor. Ahora verifiquemos los supuestos para elegir el mejor modelo.
+Considerando el AIC, notemos que el *modelo 5* se ajusta mejor y tomando en cuenta el BIC tenemos que el *modelo 4* se ajusta mejor. Pero considerando los errores tenemos que el *modelo 1* se ajusta mejor. Ahora verifiquemos los supuestos para elegir el mejor modelo.
 
 ## Normalidad
 Primero veamos *qqnorm*:
@@ -497,41 +488,29 @@ Table: Análisis de los residuales
 
 Podemos ver que el *modelo 3* pasa todos los supuestos, sin embargo tiene los peores valores para el *MAE*, *RMSE*, *AIC* y *BIC*. Por otro lado, el *modelo 5* tambien pasa todos los supuestos pero tenemos parámetros NO significativos, pues en el intervalo de confianza *sar1* tenemos al cero. El *modelo 2* tambien contiene parámetros NO significativos y su *AIC* y *BIC* no son tan bueno. 
 
-Ahora, comparando el *modelo 1* y el *modelo 4*, podemos ver que el primero tiene mejores valores para *AIC*, *ME*, *MAE* y *RMSE* que el cuarto modelo. Por lo tanto nos quedamos con el **modelo 1**.
+Ahora, comparando el *modelo 1* y el *modelo 4*, podemos ver que el primero tiene mejores valores para *ME*, *MAE* y *RMSE* que el cuarto modelo. Por lo tanto nos quedamos con el **modelo 1**. Podemos notar que el modelo 1 pasa todas las pruebas de normalidad excepto por la de Jarque-Bera, por muy poco, y por ello consideramos a este el **mejor modelo**, y en cualquier caso creemos que pedir normalidad es un supuesto demasiado fuerte como para ignorar el desempeño de este modelo basado en el fallo de la prueba de Jarque-Bera.
 
 #### 4. *Forecasting*: Con el modelo estimado, pronostique $n_{new} = 8$ (2 años) valores futuros (obtenga intervalos de predicción).
 
-Ya que hemos determinado que (1,2,1)(0,1,1)[4] se ajusta adecuadamente, seguiramos trabajando con éste
-
-
-```{r}
-
-
-fit1 <- arima(data2, order=c(1,2,1), seasonal=list(order=c(0,1,1), period=4))
-#hacemos 2 diferenciaciones manualmente para obtener estacionaridad
-
-fit1
-```
+Ya que hemos determinado que (1,2,1)(0,1,1)[4] se ajusta adecuadamente, seguiramos trabajando con éste.
 
 
 Ahora hacemos las predicciones para los siguientes 2 años:
 
 
 ```{r}
-
 ### Predict
-
-pred <- predict(fit1, n.ahead=8)$pred
+pred <- predict(fit1_data, n.ahead=8)$pred
 pred
 pred= pred^2
-pred1 <- predict(fit1, n.ahead = 24)
+pred1 <- predict(fit1_data, n.ahead = 24)
 tl <- pred1$pred - 1.96 * pred1$se
 tu <- pred1$pred + 1.96 * pred1$se
 tl <- (tl)^2
 tu <- (tu)^2
 
-plot(forecast(ts_12, 4))
-ts.plot(ts_12_2, xlim= c(1964, 1979), ylim=c(9,50), main= "predicción")
+plot(forecast(ts_12, 8))
+ts.plot(ts_12, xlim= c(1964, 1979), ylim=c(9,50), main= "Predicción")
 points(pred, type="l", col= 3)
 points(tl, type= "l", col= "red")
 points(tu, type= "l", col= "red")
