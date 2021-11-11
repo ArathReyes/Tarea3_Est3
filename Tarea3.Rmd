@@ -508,8 +508,8 @@ Ya que hemos determinado que (1,2,1)(0,1,1)[4] se ajusta adecuadamente, seguiram
 
 ```{r}
 
-
-fit1 <- arima(data2, order=c(1,2,1), seasonal=list(order=c(0,1,1), period=4))
+ts_12 <- tsdl[[12]]
+fit1 <- arima(sqrt(ts_12), order=c(1,2,1), seasonal=list(order=c(0,1,1), period=4))
 #hacemos 2 diferenciaciones manualmente para obtener estacionaridad
 
 fit1
@@ -538,5 +538,3 @@ points(pred, type="l", col= 3)
 points(tl, type= "l", col= "red")
 points(tu, type= "l", col= "red")
 ```
-
-
