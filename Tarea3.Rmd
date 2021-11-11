@@ -1,7 +1,9 @@
 ---
 title: "Tarea3_ts"
-author: "Arath Reyes"
-date: "7/11/2021"
+author: "Aguilar García, Karen Shamed
+         Cruz Estrada, Valeria Lucero
+         Reyes López Arath Alejandro"
+date: "10/11/2021"
 output: html_document
 ---
 
